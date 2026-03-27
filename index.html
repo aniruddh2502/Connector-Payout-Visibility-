@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connectors Incentives Payout</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00e5a0;
+    --accent2: #0066ff;
+    --text: #e8edf5;
+    --muted: #7a8ba0;
+    --border: rgba(0,229,160,0.15);
+    --glow: 0 0 30px rgba(0,229,160,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 50px;
+    animation: fadeDown 0.7s ease;
+  }
+
+  .header .logo-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .header h1 span {
+    color: var(--accent);
+  }
+
+  .header p {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  /* Admin Upload Panel */
+  .admin-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .upload-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 30px;
+    display: none;
+    animation: fadeDown 0.3s ease;
+  }
+
+  .upload-panel.open { display: block; }
+
+  .upload-panel h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+
+  .upload-panel p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+
+  .file-drop {
+    border: 2px dashed rgba(0,229,160,0.25);
+    border-radius: 6px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .file-drop:hover, .file-drop.drag {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.04);
+  }
+
+  .file-drop input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .file-drop .drop-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .file-drop p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .file-drop .accent { color: var(--accent); }
+
+  .upload-status {
+    margin-top: 14px;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .upload-status.success {
+    display: block;
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--accent);
+  }
+
+  .upload-status.error {
+    display: block;
+    background: rgba(255,60,60,0.1);
+    border: 1px solid rgba(255,60,60,0.3);
+    color: #ff6060;
+  }
+
+  /* Search Card */
+  .search-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: var(--glow);
+    animation: fadeUp 0.6s ease 0.3s both;
+  }
+
+  .search-card label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 2px;
+    padding: 14px 18px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,160,0.08);
+  }
+
+  .input-row input::placeholder { color: var(--muted); font-size: 13px; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 14px 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover {
+    background: #00ffb3;
+    box-shadow: 0 0 20px rgba(0,229,160,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  /* No data state */
+  .no-data-msg {
+    text-align: center;
+    padding: 50px;
+    background: var(--surface);
+    border: 1px dashed rgba(0,229,160,0.15);
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: none;
+  }
+
+  .no-data-msg .icon { font-size: 40px; margin-bottom: 14px; }
+  .no-data-msg h3 { font-family: 'Syne', sans-serif; margin-bottom: 8px; }
+  .no-data-msg p { color: var(--muted); font-size: 13px; }
+
+  /* Result Card */
+  .result-card {
+    display: none;
+    animation: fadeUp 0.5s ease;
+  }
+
+  .result-card.show { display: block; }
+
+  .emp-header {
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    padding: 24px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .emp-info h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .emp-info .emp-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+
+  .tag.id { border-color: rgba(0,102,255,0.4); color: #6699ff; background: rgba(0,102,255,0.08); }
+  .tag.hub { border-color: rgba(0,229,160,0.3); color: var(--accent); background: rgba(0,229,160,0.06); }
+  .tag.route { border-color: rgba(255,180,0,0.3); color: #ffcc44; background: rgba(255,180,0,0.06); }
+
+  .total-badge {
+    text-align: right;
+  }
+
+  .total-badge .label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .total-badge .amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  /* Breakdown grid */
+  .breakdown-grid {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+  }
+
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+    gap: 20px;
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row:hover { background: rgba(0,229,160,0.03); }
+
+  .breakdown-row .field-name {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    flex: 1;
+  }
+
+  .breakdown-row .field-val {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: right;
+    min-width: 100px;
+  }
+
+  .breakdown-row .field-val.money {
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .breakdown-row .field-val.negative {
+    color: #ff6060;
+  }
+
+  .breakdown-row.divider {
+    background: rgba(0,229,160,0.04);
+    padding: 10px 30px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breakdown-row.divider span {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* Error msg */
+  .error-msg {
+    background: rgba(255,60,60,0.08);
+    border: 1px solid rgba(255,60,60,0.2);
+    color: #ff7070;
+    padding: 16px 22px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .error-msg.show { display: block; animation: shake 0.4s ease; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 60px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  @media (max-width: 580px) {
+    .input-row { flex-direction: column; }
+    .emp-header { flex-direction: column; }
+    .total-badge { text-align: left; }
+    .search-card { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-tag">&#9651; Connectors</div>
+    <h1>Incentives <span>Payout</span></h1>
+    <p>Enter your Employee ID to view your incentive breakdown</p>
+  </div>
+
+  <!-- Admin Toggle -->
+  <div class="admin-toggle">
+    <button class="btn-ghost" onclick="toggleUpload()">⚙ Admin Upload</button>
+  </div>
+
+  <!-- Upload Panel -->
+  <div class="upload-panel" id="uploadPanel">
+    <h3>Upload Incentives Sheet</h3>
+    <p>Upload the monthly Excel file (.xlsx or .xls). The sheet must have the following columns:<br>
+    <strong style="color:var(--text)">Mob No, Emp ID, Agent, Route, H2C/C2L/H2L, Kms Per Route, Additional KM, Extra Kms Pay(Amount), Per trip Km Payout, Clinic Rounds + B2B, Total Trips, Working Days, On-Time Tasks Amount(20Rs), Incentive/trip, Airport /NABL duty, Penalty, TL Bonus, Arrear, Total Incentive</strong>
+    </p>
+    <div class="file-drop" id="fileDrop">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)">
+      <div class="drop-icon">📊</div>
+      <p><span class="accent">Click to upload</span> or drag & drop</p>
+      <p style="margin-top:6px; font-size:11px;">.xlsx / .xls files only</p>
+    </div>
+    <div class="upload-status" id="uploadStatus"></div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-card">
+    <label>Employee ID</label>
+    <div class="input-row">
+      <input type="text" id="empIdInput" placeholder="e.g. EMP1023" onkeydown="if(event.key==='Enter') search()">
+      <button class="btn-primary" onclick="search()">View Payout</button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- No data uploaded state -->
+  <div class="no-data-msg" id="noDataMsg">
+    <div class="icon">📋</div>
+    <h3>No data loaded yet</h3>
+    <p>Ask your admin to upload the monthly incentives sheet via Admin Upload above.</p>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard"></div>
+
+  <div class="footer">CONNECTORS INCENTIVES PAYOUT &nbsp;•&nbsp; CONFIDENTIAL</div>
+</div>
+
+<!-- SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+
+let employeeData = {}; // keyed by EMP ID (string)
+let dataLoaded = false;
+
+// ── Column mapping ──────────────────────────────────────────────
+const COLUMNS = [
+  { key: 'Mob No',                   label: 'Mobile Number',             money: false },
+  { key: 'Emp ID',                   label: 'Employee ID',               money: false },
+  { key: 'Agent',                    label: 'Agent Name',                money: false },
+  { key: 'Route',                    label: 'Route',                     money: false },
+  { key: 'H2C/C2L/H2L',             label: 'Type (H2C / C2L / H2L)',    money: false },
+  { key: 'Kms Per Route',            label: 'Kms Per Route',             money: false },
+  { key: 'Additional KM',           label: 'Additional KM',              money: false },
+  { key: 'Extra Kms Pay(Amount)',    label: 'Extra Kms Pay',             money: true  },
+  { key: 'Per trip Km Payout',       label: 'Per Trip KM Payout',        money: true  },
+  { key: 'Clinic Rounds + B2B',      label: 'Clinic Rounds + B2B',       money: false },
+  { key: 'Total Trips',              label: 'Total Trips',               money: false },
+  { key: 'Working Days',             label: 'Working Days',              money: false },
+  { key: 'On-Time Tasks  Amount(20Rs)', label: 'On-Time Tasks Amount',   money: true  },
+  { key: 'Incentive/trip',           label: 'Incentive / Trip',          money: true  },
+  { key: 'Airport /NABL duty',       label: 'Airport / NABL Duty',       money: true  },
+  { key: 'Penalty',                  label: 'Penalty',                   money: true, negative: true },
+  { key: 'TL Bonus',                 label: 'TL Bonus',                  money: true  },
+  { key: 'Arrear',                   label: 'Arrear',                    money: true  },
+  { key: 'Total Incentive',          label: '★ Total Incentive',         money: true  },
+];
+
+// ── Admin toggle ────────────────────────────────────────────────
+function toggleUpload() {
+  const p = document.getElementById('uploadPanel');
+  p.classList.toggle('open');
+}
+
+// ── File drag & drop styling ────────────────────────────────────
+const drop = document.getElementById('fileDrop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+function handleFile(input) {
+  if (input.files[0]) processFile(input.files[0]);
+}
+
+// ── Parse Excel ─────────────────────────────────────────────────
+function processFile(file) {
+  const status = document.getElementById('uploadStatus');
+  status.className = 'upload-status';
+  status.textContent = '⏳ Reading file...';
+  status.style.display = 'block';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!rows.length) throw new Error('Sheet appears empty.');
+
+      // Normalize keys (trim whitespace from column headers)
+      const normalized = rows.map(row => {
+        const obj = {};
+        for (const k in row) obj[k.trim()] = row[k];
+        return obj;
+      });
+
+      // Check for Emp ID column
+      const sample = normalized[0];
+      const empCol = findKey(sample, 'Emp ID');
+      if (!empCol) throw new Error('Could not find "Emp ID" column. Check column headers.');
+
+      employeeData = {};
+      normalized.forEach(row => {
+        const id = String(row[empCol] || '').trim().toUpperCase();
+        if (id) employeeData[id] = row;
+      });
+
+      dataLoaded = true;
+      const count = Object.keys(employeeData).length;
+      status.textContent = `✓ Loaded ${count} employees from "${file.name}"`;
+      status.className = 'upload-status success';
+      document.getElementById('noDataMsg').style.display = 'none';
+
+      // Store in localStorage for persistence
+      try {
+        localStorage.setItem('cip_data', JSON.stringify(employeeData));
+        localStorage.setItem('cip_filename', file.name);
+        localStorage.setItem('cip_date', new Date().toLocaleString());
+      } catch(e) {}
+
+    } catch(err) {
+      status.textContent = '✗ Error: ' + err.message;
+      status.className = 'upload-status error';
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function findKey(obj, target) {
+  const t = target.trim().toLowerCase();
+  return Object.keys(obj).find(k => k.trim().toLowerCase() === t) || null;
+}
+
+// ── Search ──────────────────────────────────────────────────────
+function search() {
+  const input = document.getElementById('empIdInput').value.trim().toUpperCase();
+  const errorDiv = document.getElementById('errorMsg');
+  const resultCard = document.getElementById('resultCard');
+
+  errorDiv.classList.remove('show');
+  resultCard.classList.remove('show');
+  resultCard.innerHTML = '';
+
+  if (!input) {
+    showError('Please enter an Employee ID.');
+    return;
+  }
+
+  if (!dataLoaded || !Object.keys(employeeData).length) {
+    showError('No data loaded. Ask your admin to upload the incentives sheet.');
+    return;
+  }
+
+  const row = employeeData[input];
+  if (!row) {
+    showError(`No record found for Employee ID: ${input}. Please check your ID or contact your TL.`);
+    return;
+  }
+
+  renderResult(row);
+}
+
+function showError(msg) {
+  const d = document.getElementById('errorMsg');
+  d.textContent = msg;
+  d.classList.add('show');
+}
+
+// ── Render result ────────────────────────────────────────────────
+function renderResult(row) {
+  const card = document.getElementById('resultCard');
+
+  const get = (key) => {
+    const found = Object.keys(row).find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
+    return found ? row[found] : '';
+  };
+
+  const fmt = (val, money) => {
+    if (val === '' || val === null || val === undefined) return '—';
+    if (money) {
+      const n = parseFloat(val);
+      if (isNaN(n)) return val;
+      return '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+    return val;
+  };
+
+  const agentName = get('Agent') || get('agent') || '—';
+  const empId = get('Emp ID') || '—';
+  const hub = get('Hub') || get('hub') || get('Hub Tagged') || '—';
+  const route = get('Route') || '—';
+  const total = get('Total Incentive');
+  const totalFmt = fmt(total, true);
+
+  // Split columns into groups
+  const info = COLUMNS.slice(0, 5);
+  const trip = COLUMNS.slice(5, 12);
+  const pay = COLUMNS.slice(12);
+
+  const makeRows = (cols) => cols.map(col => {
+    const val = get(col.key);
+    const isNeg = col.negative && parseFloat(val) > 0;
+    const cls = col.key === 'Total Incentive' ? 'money' : (col.money ? 'money' : '') + (isNeg ? ' negative' : '');
+    return `
+      <div class="breakdown-row ${col.key === 'Total Incentive' ? 'total-row' : ''}">
+        <span class="field-name">${col.label}</span>
+        <span class="field-val ${cls}">${fmt(val, col.money)}</span>
+      </div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="emp-header">
+      <div class="emp-info">
+        <h2>${agentName}</h2>
+        <div class="emp-meta">
+          <span class="tag id">ID: ${empId}</span>
+          ${hub !== '—' ? `<span class="tag hub">Hub: ${hub}</span>` : ''}
+          ${route !== '—' ? `<span class="tag route">Route: ${route}</span>` : ''}
+        </div>
+      </div>
+      <div class="total-badge">
+        <div class="label">Total Incentive</div>
+        <div class="amount">${totalFmt}</div>
+      </div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="breakdown-row divider"><span>Employee Info</span></div>
+      ${makeRows(info)}
+      <div class="breakdown-row divider"><span>Trip Details</span></div>
+      ${makeRows(trip)}
+      <div class="breakdown-row divider"><span>Payout Breakdown</span></div>
+      ${makeRows(pay)}
+    </div>
+  `;
+
+  card.classList.add('show');
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Load from localStorage on startup ───────────────────────────
+(function init() {
+  try {
+    const saved = localStorage.getItem('cip_data');
+    const fname = localStorage.getItem('cip_filename');
+    const fdate = localStorage.getItem('cip_date');
+    if (saved) {
+      employeeData = JSON.parse(saved);
+      dataLoaded = true;
+      const count = Object.keys(employeeData).length;
+      const status = document.getElementById('uploadStatus');
+      status.textContent = `✓ ${count} employees loaded from "${fname}" (uploaded ${fdate})`;
+      status.className = 'upload-status success';
+      status.style.display = 'block';
+      document.getElementById('noDataMsg').style.display = 'none';
+    } else {
+      document.getElementById('noDataMsg').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('noDataMsg').style.display = 'block';
+  }
+})();
+
+</script>
+</body>
+</html>
