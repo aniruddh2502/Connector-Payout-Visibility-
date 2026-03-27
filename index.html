@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connectors Incentives Payout</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00e5a0;
+    --text: #e8edf5;
+    --muted: #7a8ba0;
+    --border: rgba(0,229,160,0.15);
+    --glow: 0 0 30px rgba(0,229,160,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 46px; animation: fadeDown 0.7s ease; }
+  .logo-tag {
+    display: inline-block;
+    font-size: 11px; letter-spacing: 4px; color: var(--accent);
+    text-transform: uppercase; border: 1px solid var(--border);
+    padding: 6px 16px; border-radius: 2px; margin-bottom: 18px;
+  }
+  .header h1 { font-family: 'Syne', sans-serif; font-size: clamp(26px,5vw,50px); font-weight: 800; line-height: 1.1; }
+  .header h1 span { color: var(--accent); }
+  .header p { margin-top: 10px; color: var(--muted); font-size: 13px; letter-spacing: 1px; }
+  .data-badge {
+    display: none;
+    align-items: center; gap: 8px; margin-top: 14px;
+    font-size: 11px; letter-spacing: 1px; color: var(--accent);
+    background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2);
+    padding: 5px 14px; border-radius: 20px;
+    justify-content: center;
+  }
+  .data-badge .dot { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+
+  /* Admin */
+  .admin-toggle-wrap { display:flex; justify-content:flex-end; margin-bottom:16px; animation:fadeUp 0.5s ease 0.2s both; }
+  .btn-ghost {
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    font-family:'DM Mono',monospace; font-size:12px; letter-spacing:1px;
+    padding:8px 16px; cursor:pointer; border-radius:4px; transition:all 0.2s;
+  }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+  .admin-panel {
+    display:none; background:var(--surface); border:1px solid rgba(0,229,160,0.2);
+    border-radius:8px; padding:28px; margin-bottom:24px; animation:fadeDown 0.3s ease;
+  }
+  .admin-panel.open { display:block; }
+  .admin-panel h3 { font-family:'Syne',sans-serif; font-size:15px; color:var(--accent); margin-bottom:10px; }
+
+  .how-it-works {
+    background:rgba(0,229,160,0.05); border:1px solid rgba(0,229,160,0.12);
+    border-radius:6px; padding:14px 18px; margin-bottom:20px;
+    font-size:12px; color:var(--muted); line-height:1.9;
+  }
+  .how-it-works strong { color:var(--text); }
+  .how-it-works ol { padding-left:18px; }
+  .how-it-works li { margin-bottom:3px; }
+
+  .file-drop {
+    border:2px dashed rgba(0,229,160,0.22); border-radius:6px; padding:36px;
+    text-align:center; cursor:pointer; transition:all 0.3s; position:relative;
+  }
+  .file-drop:hover, .file-drop.drag { border-color:var(--accent); background:rgba(0,229,160,0.04); }
+  .file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .file-drop .drop-icon { font-size:32px; margin-bottom:10px; }
+  .file-drop p { font-size:13px; color:var(--muted); margin:0; }
+  .file-drop .hl { color:var(--accent); }
+
+  .proc-bar { display:none; margin-top:14px; background:var(--surface2); border-radius:4px; height:4px; overflow:hidden; }
+  .proc-bar.show { display:block; }
+  .proc-bar::after {
+    content:''; display:block; height:100%; width:40%; background:var(--accent);
+    border-radius:4px; animation:slide 1.2s infinite ease-in-out;
+  }
+
+  .admin-status { display:none; margin-top:14px; font-size:12px; padding:12px 16px; border-radius:4px; line-height:1.8; }
+  .admin-status.success { display:block; background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.25); color:var(--accent); }
+  .admin-status.error   { display:block; background:rgba(255,80,80,0.08);  border:1px solid rgba(255,80,80,0.25);  color:#ff7070; }
+
+  .btn-download {
+    display:none; margin-top:14px; width:100%;
+    background:var(--accent); color:#000; border:none;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:14px; letter-spacing:1px;
+    padding:14px; border-radius:4px; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-download.show { display:block; }
+  .btn-download:hover { background:#00ffb3; box-shadow:0 0 20px rgba(0,229,160,0.35); }
+
+  /* Search */
+  .search-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:36px; margin-bottom:24px; box-shadow:var(--glow); animation:fadeUp 0.6s ease 0.3s both;
+  }
+  .search-card label { display:block; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+  .input-row { display:flex; gap:10px; }
+  .input-row input {
+    flex:1; background:var(--bg); border:1px solid rgba(0,229,160,0.18); color:var(--text);
+    font-family:'DM Mono',monospace; font-size:16px; letter-spacing:2px;
+    padding:13px 18px; border-radius:4px; outline:none; transition:border-color 0.2s;
+  }
+  .input-row input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,229,160,0.07); }
+  .input-row input::placeholder { color:var(--muted); font-size:13px; letter-spacing:0; }
+  .btn-primary {
+    background:var(--accent); color:#000; border:none;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:14px; letter-spacing:1px;
+    padding:13px 26px; border-radius:4px; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-primary:hover { background:#00ffb3; box-shadow:0 0 18px rgba(0,229,160,0.35); transform:translateY(-1px); }
+  .error-msg {
+    display:none; margin-top:14px; background:rgba(255,80,80,0.08);
+    border:1px solid rgba(255,80,80,0.2); color:#ff7070;
+    padding:12px 18px; border-radius:4px; font-size:13px;
+  }
+  .error-msg.show { display:block; animation:shake 0.4s ease; }
+
+  /* Empty */
+  .empty-state {
+    display:none; text-align:center; padding:50px 30px;
+    background:var(--surface); border:1px dashed rgba(0,229,160,0.12); border-radius:8px;
+  }
+  .empty-state .icon { font-size:40px; margin-bottom:14px; }
+  .empty-state h3 { font-family:'Syne',sans-serif; font-size:18px; margin-bottom:8px; }
+  .empty-state p { color:var(--muted); font-size:13px; line-height:1.7; }
+
+  /* Result */
+  .result-card { display:none; }
+  .result-card.show { display:block; animation:fadeUp 0.45s ease; }
+
+  .emp-header {
+    background:linear-gradient(135deg,var(--surface2),var(--surface));
+    border:1px solid var(--border); border-radius:8px 8px 0 0;
+    padding:22px 28px; display:flex; align-items:center;
+    justify-content:space-between; flex-wrap:wrap; gap:14px;
+  }
+  .emp-info h2 { font-family:'Syne',sans-serif; font-size:21px; font-weight:800; }
+  .emp-meta { display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+  .tag { font-size:11px; letter-spacing:1px; padding:4px 10px; border-radius:2px; border:1px solid; }
+  .tag.id    { border-color:rgba(0,102,255,0.35);  color:#6699ff; background:rgba(0,102,255,0.07); }
+  .tag.hub   { border-color:rgba(0,229,160,0.3);   color:var(--accent); background:rgba(0,229,160,0.06); }
+  .tag.route { border-color:rgba(255,180,0,0.3);   color:#ffcc44; background:rgba(255,180,0,0.06); }
+  .tag.type  { border-color:rgba(180,100,255,0.3); color:#cc88ff; background:rgba(180,100,255,0.06); }
+
+  .total-badge { text-align:right; }
+  .total-badge .tlabel { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; }
+  .total-badge .amount { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--accent); }
+
+  .breakdown-grid {
+    background:var(--surface); border:1px solid var(--border);
+    border-top:none; border-radius:0 0 8px 8px; overflow:hidden; margin-bottom:30px;
+  }
+  .brow {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:15px 28px; border-bottom:1px solid rgba(255,255,255,0.04);
+    transition:background 0.15s; gap:16px;
+  }
+  .brow:last-child { border-bottom:none; }
+  .brow:hover { background:rgba(0,229,160,0.03); }
+  .brow .fname { font-size:12px; color:var(--muted); flex:1; }
+  .brow .fval  { font-size:14px; color:var(--text); text-align:right; min-width:110px; }
+  .brow .fval.money { color:var(--accent); font-family:'Syne',sans-serif; font-size:15px; font-weight:700; }
+  .brow .fval.neg   { color:#ff6060; }
+  .section-head { background:rgba(0,229,160,0.05); padding:10px 28px; border-bottom:1px solid var(--border); }
+  .section-head span { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--accent); }
+
+  .footer { text-align:center; margin-top:60px; color:var(--muted); font-size:11px; letter-spacing:2px; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+  @keyframes shake    { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+  @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes slide    { 0%{margin-left:-40%} 100%{margin-left:100%} }
+
+  @media(max-width:580px){
+    .input-row{flex-direction:column;}
+    .emp-header{flex-direction:column;}
+    .total-badge{text-align:left;}
+    .search-card,.admin-panel{padding:20px 16px;}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo-tag">&#9651; Connectors</div>
+    <h1>Incentives <span>Payout</span></h1>
+    <p>Enter your Employee ID to view your incentive breakdown</p>
+    <div class="data-badge" id="dataBadge">
+      <div class="dot"></div>
+      <span id="dataBadgeText"></span>
+    </div>
+  </div>
+
+  <div class="admin-toggle-wrap">
+    <button class="btn-ghost" onclick="toggleAdmin()">⚙ Admin — Update Data</button>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <h3>Upload Monthly Incentives Sheet</h3>
+    <div class="how-it-works">
+      <strong>How this works — read before uploading:</strong>
+      <ol>
+        <li>Upload your <strong>.xlsx / .xls</strong> sheet below</li>
+        <li>This page will generate a <strong>new index.html</strong> with all data baked inside it</li>
+        <li>Download that new file and <strong>replace the old index.html</strong> on your GitHub repo</li>
+        <li>All team members visiting the GitHub Pages link will see the updated payout data automatically — no login, no upload on their end</li>
+      </ol>
+    </div>
+    <div class="file-drop" id="fileDrop">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
+      <div class="drop-icon">📊</div>
+      <p><span class="hl">Click to choose file</span> or drag & drop here</p>
+      <p style="margin-top:6px;font-size:11px;">.xlsx or .xls only</p>
+    </div>
+    <div class="proc-bar" id="procBar"></div>
+    <div class="admin-status" id="adminStatus"></div>
+    <button class="btn-download" id="btnDownload" onclick="downloadNewHTML()">
+      ⬇ Download Updated index.html &rarr; Then replace on GitHub
+    </button>
+  </div>
+
+  <div class="search-card">
+    <label>Employee ID</label>
+    <div class="input-row">
+      <input type="text" id="empInput" placeholder="Enter your Emp ID  (e.g. EMP1023)"
+             onkeydown="if(event.key==='Enter') doSearch()">
+      <button class="btn-primary" onclick="doSearch()">View Payout</button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="icon">📋</div>
+    <h3>No payout data available yet</h3>
+    <p>Your admin needs to upload the monthly sheet and publish<br>the updated file to GitHub. Check back soon!</p>
+  </div>
+
+  <div class="result-card" id="resultCard"></div>
+
+  <div class="footer">CONNECTORS INCENTIVES PAYOUT &nbsp;•&nbsp; CONFIDENTIAL</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ================================================================
+   EMBEDDED DATA — replaced automatically when admin re-generates
+   ================================================================ */
+var EMBEDDED_DATA = null; /*DATASLOT*/
+var DATA_META = {"month":"","uploadedAt":"","count":0,"filename":""}; /*METASLOT*/
+
+/* ================================================================
+   Column definitions  [group, key-variants[], label, money, penalty]
+   ================================================================ */
+var COLS = [
+  ["info", ["Mob No","Mob No.","Mobile","Mobile No","mob no"],           "Mobile Number",                false, false],
+  ["info", ["Emp ID","EmpID","Employee ID","Emp_ID","emp id"],           "Employee ID",                  false, false],
+  ["info", ["Agent","Agent Name","Name","agent"],                        "Agent Name",                   false, false],
+  ["info", ["Route","route"],                                            "Route",                        false, false],
+  ["info", ["H2C/C2L/H2L","Type","H2C","h2c"],                          "Type (H2C / C2L / H2L)",       false, false],
+  ["trip", ["Kms Per Route","KMs Per Route","Km Per Route","kms per route"], "Kms Per Route",            false, false],
+  ["trip", ["Additional KM","Additional Km","Add KM","additional km"],   "Additional KM",                false, false],
+  ["trip", ["Extra Kms Pay(Amount)","Extra Kms Pay","Extra KM Pay"],     "Extra Kms Pay",                true,  false],
+  ["trip", ["Per trip Km Payout","Per Trip Km Payout","Per Trip KM"],    "Per Trip KM Payout",           true,  false],
+  ["trip", ["Clinic Rounds + B2B","Clinic Rounds","Clinic+B2B"],         "Clinic Rounds + B2B",          false, false],
+  ["trip", ["Total Trips","Trips","total trips"],                        "Total Trips",                  false, false],
+  ["trip", ["Working Days","Work Days","Days","working days"],           "Working Days",                 false, false],
+  ["pay",  ["On-Time Tasks  Amount(20Rs)","On-Time Tasks Amount(20Rs)","On Time Tasks Amount","Ontime Amount","On-Time Amount","On-Time Tasks Amount"], "On-Time Tasks Amount (₹20/task)", true, false],
+  ["pay",  ["Incentive/trip","Incentive Per Trip","Incentive/Trip"],     "Incentive / Trip",             true,  false],
+  ["pay",  ["Airport /NABL duty","Airport/NABL duty","Airport NABL","NABL Duty","Airport/ NABL duty"], "Airport / NABL Duty", true, false],
+  ["pay",  ["Penalty","penalty"],                                        "Penalty",                      true,  true ],
+  ["pay",  ["TL Bonus","TL Bonus Amount","tl bonus"],                    "TL Bonus",                     true,  false],
+  ["pay",  ["Arrear","Arrears","arrear"],                                "Arrear",                       true,  false],
+  ["pay",  ["Total Incentive","Total","total incentive"],                "★  Total Incentive",           true,  false],
+];
+
+var uploadedDict  = null;
+var generatedHTML = null;
+
+/* ── Init ─────────────────────────────────────────────── */
+(function init() {
+  if (EMBEDDED_DATA && Object.keys(EMBEDDED_DATA).length > 0) {
+    document.getElementById("emptyState").style.display = "none";
+    var badge = document.getElementById("dataBadge");
+    badge.style.display = "inline-flex";
+    var label = DATA_META.month
+      ? DATA_META.count + " employees · " + DATA_META.month
+      : DATA_META.count + " employees loaded";
+    document.getElementById("dataBadgeText").textContent = label;
+  } else {
+    document.getElementById("emptyState").style.display = "block";
+  }
+})();
+
+/* ── Admin toggle ─────────────────────────────────────── */
+function toggleAdmin() {
+  document.getElementById("adminPanel").classList.toggle("open");
+}
+
+/* ── Drag & drop ──────────────────────────────────────── */
+var dz = document.getElementById("fileDrop");
+dz.addEventListener("dragover",  function(e){ e.preventDefault(); dz.classList.add("drag"); });
+dz.addEventListener("dragleave", function(){ dz.classList.remove("drag"); });
+dz.addEventListener("drop", function(e){
+  e.preventDefault(); dz.classList.remove("drag");
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+/* ── Handle uploaded file ─────────────────────────────── */
+function handleFile(file) {
+  if (!file) return;
+  var status = document.getElementById("adminStatus");
+  var bar    = document.getElementById("procBar");
+  var btn    = document.getElementById("btnDownload");
+  status.className = "admin-status"; status.style.display = "none";
+  btn.classList.remove("show");
+  bar.classList.add("show");
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    bar.classList.remove("show");
+    try {
+      var wb   = XLSX.read(e.target.result, { type: "binary" });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      if (!rows.length) throw new Error("Sheet is empty.");
+
+      // normalise keys
+      var norm = rows.map(function(row){
+        var o = {};
+        Object.keys(row).forEach(function(k){ o[k.trim()] = row[k]; });
+        return o;
+      });
+
+      // find Emp ID column
+      var empKey = resolveKey(norm[0], ["Emp ID","EmpID","Employee ID","Emp_ID","emp id"]);
+      if (!empKey) throw new Error('"Emp ID" column not found. Make sure your sheet has an exact column named "Emp ID".');
+
+      // build dictionary keyed by uppercase Emp ID
+      var dict = {};
+      norm.forEach(function(row){
+        var id = String(row[empKey] || "").trim().toUpperCase();
+        if (id) dict[id] = row;
+      });
+
+      var count = Object.keys(dict).length;
+      if (count === 0) throw new Error("No valid Emp IDs found in the sheet.");
+
+      uploadedDict = dict;
+      var month = prompt('Enter the month/period for this data (e.g. "March 2025"):', "") || "";
+      generatedHTML = buildHTML(dict, count, month, file.name);
+
+      status.className = "admin-status success";
+      status.innerHTML = "✓ <strong>" + count + " employees</strong> processed from <em>" + file.name + "</em><br>" +
+        "Click the button below &rarr; download the new index.html &rarr; replace it on GitHub.";
+      btn.classList.add("show");
+
+    } catch(err) {
+      status.className = "admin-status error";
+      status.textContent = "✗ " + err.message;
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function resolveKey(obj, candidates) {
+  var keys = Object.keys(obj).map(function(k){ return k.trim(); });
+  for (var i = 0; i < candidates.length; i++) {
+    var c = candidates[i].toLowerCase();
+    for (var j = 0; j < keys.length; j++) {
+      if (keys[j].toLowerCase() === c) return keys[j];
+    }
+  }
+  return null;
+}
+
+/* ── Build new self-contained HTML ───────────────────── */
+function buildHTML(dict, count, month, filename) {
+  var now = new Date().toLocaleString("en-IN");
+  var src = document.documentElement.outerHTML;
+
+  var dataJSON = JSON.stringify(dict);
+  var metaJSON = JSON.stringify({ month: month, uploadedAt: now, count: count, filename: filename });
+
+  // Replace the two sentinel comments
+  src = src.replace(
+    'var EMBEDDED_DATA = null; /*DATASLOT*/',
+    'var EMBEDDED_DATA = ' + dataJSON + '; /*DATASLOT*/'
+  );
+  src = src.replace(
+    'var DATA_META = {"month":"","uploadedAt":"","count":0,"filename":""}; /*METASLOT*/',
+    'var DATA_META = ' + metaJSON + '; /*METASLOT*/'
+  );
+  return src;
+}
+
+/* ── Download ─────────────────────────────────────────── */
+function downloadNewHTML() {
+  if (!generatedHTML) return;
+  var blob = new Blob([generatedHTML], { type: "text/html;charset=utf-8" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "index.html";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ── Search ───────────────────────────────────────────── */
+function doSearch() {
+  var input  = document.getElementById("empInput").value.trim().toUpperCase();
+  var errDiv = document.getElementById("errorMsg");
+  var card   = document.getElementById("resultCard");
+  errDiv.classList.remove("show");
+  card.classList.remove("show");
+  card.innerHTML = "";
+
+  if (!input) return showErr("Please enter your Employee ID.");
+  if (!EMBEDDED_DATA || Object.keys(EMBEDDED_DATA).length === 0)
+    return showErr("No payout data available. Please contact your TL / admin.");
+
+  var row = EMBEDDED_DATA[input];
+  if (!row) return showErr('No record found for "' + input + '". Check your Emp ID or contact your TL.');
+  renderResult(row);
+}
+
+function showErr(msg) {
+  var d = document.getElementById("errorMsg");
+  d.textContent = msg; d.classList.add("show");
+}
+
+/* ── Helpers ──────────────────────────────────────────── */
+function getVal(row, candidates) {
+  var keys = Object.keys(row);
+  for (var i = 0; i < candidates.length; i++) {
+    var c = candidates[i].toLowerCase();
+    for (var j = 0; j < keys.length; j++) {
+      if (keys[j].trim().toLowerCase() === c) return row[keys[j]];
+    }
+  }
+  return "";
+}
+
+function fmtMoney(v) {
+  var n = parseFloat(v);
+  if (isNaN(n)) return (v || "—");
+  return "₹\u202f" + n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function fmtPlain(v) {
+  return (v === "" || v === null || v === undefined) ? "—" : String(v);
+}
+
+/* ── Render ───────────────────────────────────────────── */
+function renderResult(row) {
+  var card = document.getElementById("resultCard");
+
+  var name  = fmtPlain(getVal(row, ["Agent","Agent Name","Name","agent"]));
+  var empId = fmtPlain(getVal(row, ["Emp ID","EmpID","Employee ID","Emp_ID","emp id"]));
+  var hub   = fmtPlain(getVal(row, ["Hub","Hub Tagged","hub"]));
+  var route = fmtPlain(getVal(row, ["Route","route"]));
+  var type  = fmtPlain(getVal(row, ["H2C/C2L/H2L","Type","H2C","h2c"]));
+  var total = getVal(row,  ["Total Incentive","Total","total incentive"]);
+
+  var tags = '<span class="tag id">ID: ' + empId + '</span>';
+  if (hub   !== "—") tags += ' <span class="tag hub">Hub: '   + hub   + "</span>";
+  if (route !== "—") tags += ' <span class="tag route">Route: '+ route + "</span>";
+  if (type  !== "—") tags += ' <span class="tag type">'       + type  + "</span>";
+
+  var groups = { info: [], trip: [], pay: [] };
+  COLS.forEach(function(col){
+    var grp = col[0], keys = col[1], label = col[2], money = col[3], pen = col[4];
+    var v   = getVal(row, keys);
+    var display = money ? fmtMoney(v) : fmtPlain(v);
+    var cls = "fval" + (money ? (pen && parseFloat(v) > 0 ? " neg" : " money") : "");
+    groups[grp].push(
+      '<div class="brow"><span class="fname">' + label +
+      '</span><span class="' + cls + '">' + display + "</span></div>"
+    );
+  });
+
+  card.innerHTML =
+    '<div class="emp-header">' +
+      '<div class="emp-info">' +
+        '<h2>' + name + '</h2>' +
+        '<div class="emp-meta">' + tags + '</div>' +
+      '</div>' +
+      '<div class="total-badge">' +
+        '<div class="tlabel">Total Incentive</div>' +
+        '<div class="amount">' + fmtMoney(total) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="breakdown-grid">' +
+      '<div class="section-head"><span>Employee Info</span></div>' + groups.info.join("") +
+      '<div class="section-head"><span>Trip Details</span></div>'  + groups.trip.join("") +
+      '<div class="section-head"><span>Payout Breakdown</span></div>' + groups.pay.join("") +
+    '</div>';
+
+  card.classList.add("show");
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+</body>
+</html>
